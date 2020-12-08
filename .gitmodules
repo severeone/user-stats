@@ -31,3 +31,6 @@
 [submodule "src/github.com/smartystreets/goconvey"]
 	path = src/github.com/smartystreets/goconvey
 	url = https://github.com/smartystreets/goconvey
+[submodule "src/github.com/go-yaml/yaml"]
+	path = src/github.com/go-yaml/yaml
+	url = https://github.com/go-yaml/yaml
