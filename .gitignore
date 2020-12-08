@@ -21,3 +21,4 @@ Would skip repository src/github.com/severeone/user-stats
 Would skip repository src/github.com/grpc-ecosystem/go-grpc-prometheus
 Would skip repository src/github.com/beorn7/perks
 src/gopkg.in
+/build/
