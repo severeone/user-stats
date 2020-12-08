@@ -1,0 +1,23 @@
+# Created by .ignore support plugin (hsz.mobi)
+.gitignore
+.idea/
+Would skip repository src/github.com/gogo/protobuf
+Would skip repository src/github.com/dustin/go-humanize
+Would skip repository src/github.com/golang/protobuf
+Would skip repository src/github.com/google/uuid
+Would skip repository src/github.com/prometheus/common
+Would skip repository src/github.com/prometheus/client_model
+Would skip repository src/github.com/prometheus/client_golang
+Would skip repository src/github.com/prometheus/procfs
+Would skip repository src/github.com/kr/text
+Would skip repository src/github.com/kr/pretty
+Would skip repository src/github.com/rogpeppe/go-internal
+Would skip repository src/github.com/gorilla/mux
+Would skip repository src/github.com/coreos/go-semver
+Would skip repository src/github.com/coreos/go-systemd
+Would skip repository src/github.com/cespare/xxhash
+Would skip repository src/github.com/matttproud/golang_protobuf_extensions
+Would skip repository src/github.com/severeone/user-stats
+Would skip repository src/github.com/grpc-ecosystem/go-grpc-prometheus
+Would skip repository src/github.com/beorn7/perks
+src/gopkg.in
