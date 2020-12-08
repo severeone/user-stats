@@ -1,0 +1,6 @@
+[submodule "src/github.com/google/uuid"]
+	path = src/github.com/google/uuid
+	url = https://github.com/google/uuid
+[submodule "src/github.com/gorilla/mux"]
+	path = src/github.com/gorilla/mux
+	url = https://github.com/gorilla/mux
