@@ -4,3 +4,30 @@
 [submodule "src/github.com/gorilla/mux"]
 	path = src/github.com/gorilla/mux
 	url = https://github.com/gorilla/mux
+[submodule "src/github.com/fluxio/multierror"]
+	path = src/github.com/fluxio/multierror
+	url = https://github.com/fluxio/multierror
+[submodule "src/github.com/jmoiron/sqlx"]
+	path = src/github.com/jmoiron/sqlx
+	url = https://github.com/jmoiron/sqlx
+[submodule "src/github.com/fluxio/iohelpers"]
+	path = src/github.com/fluxio/iohelpers
+	url = https://github.com/fluxio/iohelpers
+[submodule "src/github.com/kr/pretty"]
+	path = src/github.com/kr/pretty
+	url = https://github.com/kr/pretty
+[submodule "src/github.com/kr/text"]
+	path = src/github.com/kr/text
+	url = https://github.com/kr/text
+[submodule "src/github.com/rogpeppe/go-internal"]
+	path = src/github.com/rogpeppe/go-internal
+	url = https://github.com/rogpeppe/go-internal
+[submodule "src/github.com/jtolds/gls"]
+	path = src/github.com/jtolds/gls
+	url = https://github.com/jtolds/gls
+[submodule "src/github.com/smartystreets/assertions"]
+	path = src/github.com/smartystreets/assertions
+	url = https://github.com/smartystreets/assertions
+[submodule "src/github.com/smartystreets/goconvey"]
+	path = src/github.com/smartystreets/goconvey
+	url = https://github.com/smartystreets/goconvey

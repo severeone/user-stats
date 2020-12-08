@@ -1,11 +1,8 @@
 package main
 
 import (
-	"context"
-	"database/sql"
 	"flag"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"log"
 	"net/http"
 	"os"
@@ -22,7 +19,7 @@ const (
 
 	CollectCidsPath       = "/collect"
 	DailyUniqueCidsPath   = "/daily_uniques"
-	MonthlyUniqueCidsPath = "monthly_uniques"
+	MonthlyUniqueCidsPath = "/monthly_uniques"
 
 	ContentTypeForm = "application/x-www-form-urlencoded"
 
@@ -35,11 +32,12 @@ const (
 // Config struct for app configuration file
 type Config struct {
 	Mysql struct {
-		Host string `yaml:"host"`
-		Port string `yaml:"port"`
-		Username string `yaml:"username"`
-		Password string `yaml:"password"`
-		Name string `yaml:"name"`
+		Host           string `yaml:"host"`
+		Port           string `yaml:"port"`
+		Username       string `yaml:"username"`
+		Password       string `yaml:"password"`
+		Name           string `yaml:"name"`
+		MaxConnections int    `yaml:"max_connections"`
 	} `yaml:"mysql"`
 	Server struct {
 		Host string `yaml:"host"`
@@ -61,7 +59,7 @@ func main() {
 	}
 
 	// Create etcd client
-	db, err := newDbConnection(config)
+	db, err := NewDbStorageService(config)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -113,29 +111,18 @@ func newConfig(configPath string) (*Config, error) {
 	return config, nil
 }
 
-// newDbConnection creates a new connection to MySQL database
-func newDbConnection(config *Config) (*sql.DB, error) {
-	return sql.Open(DbDriverName, fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",
-			config.Mysql.Username,
-			config.Mysql.Password,
-			config.Mysql.Host,
-			config.Mysql.Port,
-			config.Mysql.Name,
-		))
-}
-
-func newRouter(db *sql.DB) *mux.Router {
+func newRouter(db StorageService) *mux.Router {
 	r := mux.NewRouter()
 
 	r.HandleFunc(CollectCidsPath, collectCid(db)).Methods(http.MethodGet)
-	r.HandleFunc(DailyUniqueCidsPath, dailyUniqueCids(db)).Methods(http.MethodGet)
-	r.HandleFunc(MonthlyUniqueCidsPath, monthlyUniqueCids(db)).Methods(http.MethodGet)
+	r.HandleFunc(DailyUniqueCidsPath, dailyUniqueCidCount(db)).Methods(http.MethodGet)
+	r.HandleFunc(MonthlyUniqueCidsPath, monthlyUniqueCidCount(db)).Methods(http.MethodGet)
 
 	return r
 }
 
 // collectCid registers a single client ID
-func collectCid(db *sql.DB) http.HandlerFunc {
+func collectCid(db StorageService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", ContentTypeForm)
 		query := r.URL.Query()
@@ -143,6 +130,7 @@ func collectCid(db *sql.DB) http.HandlerFunc {
 		// Parse client ID
 		cid, err := uuid.Parse(query.Get(CidParam))
 		if err != nil {
+			log.Printf("Bad client ID %q: %v", cid, err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -153,6 +141,7 @@ func collectCid(db *sql.DB) http.HandlerFunc {
 		if date != "" {
 			i, err := strconv.ParseInt(date, 10, 64)
 			if err != nil {
+				log.Printf("Bad date %q: %v", date, err)
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
@@ -160,22 +149,17 @@ func collectCid(db *sql.DB) http.HandlerFunc {
 		}
 
 		// Save client ID to the storage
-		saveCid(db, tm, cid)
+		if err = db.SetCid(cid, tm); err != nil {
+			log.Printf("Failed to save client ID and date %q %q: %v", cid, date, err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
 		w.WriteHeader(http.StatusOK)
 	}
 }
 
-// saveCid puts a client ID with a date to the storage
-func saveCid(db *sql.DB, tm time.Time, cid uuid.UUID) {
-	key := fmt.Sprintf("%s%s", tm.Format("20200909"), cid.String())
-	_, err := kv.Put(context.TODO(), key, "1")
-	if err != nil {
-		log.Printf("Failed to save a client id: %s", cid.String())
-	}
-}
-
-func dailyUniqueCids(db *sql.DB) http.HandlerFunc {
+func dailyUniqueCidCount(db StorageService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", ContentTypeForm)
 		query := r.URL.Query()
@@ -184,10 +168,55 @@ func dailyUniqueCids(db *sql.DB) http.HandlerFunc {
 		date := query.Get(DateParam)
 		tm, err := time.Parse("20200909", date)
 		if err != nil {
+			log.Printf("Bad date %q: %v", date, err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
+		// Get daily unique client IDs from the storage
+		count, err := db.GetUniqueDailyCidCount(tm)
+		if err != nil {
+			log.Printf("Failed to get unique daily client ID count for date %q: %v", date, err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
+		if _, err = w.Write([]byte(fmt.Sprintf("%d", count))); err != nil {
+			log.Printf(
+				"Failed to write a response with daily unique client ID count %q: %v",
+				count, err)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+	}
+}
+
+func monthlyUniqueCidCount(db StorageService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", ContentTypeForm)
+		query := r.URL.Query()
+
+		// Parse date
+		date := query.Get(DateParam)
+		tm, err := time.Parse("20200909", date)
+		if err != nil {
+			log.Printf("Bad date %q: %v", date, err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		// Get monthly unique client IDs from the storage
+		count, err := db.GetUniqueMonthlyCidCount(tm)
+		if err != nil {
+			log.Printf("Failed to get unique monthly client ID count for date %q: %v", date, err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if _, err = w.Write([]byte(fmt.Sprintf("%d", count))); err != nil {
+			log.Printf(
+				"Failed to write a response with monthly unique client ID count %q: %v",
+				count, err)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 	}
 }
