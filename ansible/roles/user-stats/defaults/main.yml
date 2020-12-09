@@ -1,0 +1,8 @@
+---
+user_stats_path: ../../
+user_stats_config_src: "{{ user_stats_path }}/config.yml"
+user_stats_config_dst: ~/user-stats
+user_stats_deployment_script: "{{ user_stats_path }}/scripts/deploy.sh"
+
+user_stats_docker_file: "{{ user_stats_path }}/Dockerfile"
+user_stats_docker_image_local: "severeone/user-stats:latest"

@@ -1,0 +1,31 @@
+---
+- name: Create user-stats DB
+  shell: >
+    mysql 
+    -h {{ user_stats_db_host }}
+    -P {{ user_stats_db_port }}
+    -u{{ user_stats_db_root_user }}
+    -p{{ user_stats_db_root_password }}
+    -e "CREATE DATABASE IF NOT EXISTS {{ user_stats_db_name }};"
+  register: create_db
+  until: create_db is not failed
+  retries: 10
+
+- name: Copy base scheme script to the target instance
+  copy:
+    src: "{{ user_stats_db_script_path }}/{{ user_stats_db_base_script }}"
+    dest: ./{{ user_stats_db_base_script }}
+    mode: 0777
+
+- name: Apply base scheme to user-stats DB
+  shell: >
+    mysql 
+    -h {{ user_stats_db_host }}
+    -P {{ user_stats_db_port }}
+    -u{{ user_stats_db_root_user }}
+    -p{{ user_stats_db_root_password }}
+    {{ user_stats_db_name }}
+    < {{ user_stats_db_base_script }}
+  register: base_db
+  until: base_db is not failed
+  retries: 10

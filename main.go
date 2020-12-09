@@ -26,8 +26,6 @@ const (
 
 	ConfigFileFlag = "config"
 	ConfigFilePath = "./config.yml"
-
-	DbDriverName = "mysql"
 )
 
 // Config struct for app configuration file
@@ -151,7 +149,7 @@ func collectCid(db StorageService) http.HandlerFunc {
 
 		// Save client ID to the storage
 		if err = db.SetCid(cid, tm); err != nil {
-			log.Printf("Failed to save client ID and date %q %q: %v", cid, date, err)
+			log.Printf("Failed to save client ID and date %q %q: %v", cid, tm, err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -167,7 +165,7 @@ func dailyUniqueCidCount(db StorageService) http.HandlerFunc {
 
 		// Parse date
 		date := query.Get(DateParam)
-		tm, err := time.Parse("20200909", date)
+		tm, err := time.Parse("20060102", date)
 		if err != nil {
 			log.Printf("Bad date %q: %v", date, err)
 			w.WriteHeader(http.StatusBadRequest)
@@ -198,7 +196,7 @@ func monthlyUniqueCidCount(db StorageService) http.HandlerFunc {
 
 		// Parse date
 		date := query.Get(DateParam)
-		tm, err := time.Parse("20200909", date)
+		tm, err := time.Parse("20060102", date)
 		if err != nil {
 			log.Printf("Bad date %q: %v", date, err)
 			w.WriteHeader(http.StatusBadRequest)

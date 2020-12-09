@@ -3,12 +3,16 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/fluxio/multierror"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
+
+const DbDriverName = "mysql"
 
 type StorageService interface {
 	// Gracefully end the service
@@ -46,7 +50,7 @@ type dbStorageService struct {
 
 // NewDbStorageService creates a new connection to MySQL database
 func NewDbStorageService(config *Config) (StorageService, error) {
-	dbSourceName := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",
+	dbSourceName := fmt.Sprintf("%s:%s@(%s:%s)/%s",
 		config.Mysql.Username,
 		config.Mysql.Password,
 		config.Mysql.Host,
@@ -55,6 +59,7 @@ func NewDbStorageService(config *Config) (StorageService, error) {
 	)
 	db, err := sqlx.Connect(DbDriverName, dbSourceName)
 	if err != nil {
+		log.Fatalf("Failed to connect to db %q: %v", dbSourceName, err)
 		return nil, err
 	}
 	db.SetMaxOpenConns(config.Mysql.MaxConnections)
@@ -69,7 +74,7 @@ func NewDbStorageService(config *Config) (StorageService, error) {
 	s := &dbStorageService{
 		db: db,
 		sql_SaveCid: prepareNamed(`
-				INSERT INTO cids (date, cid) VALUES (:cid, :date)`),
+				INSERT IGNORE INTO cids (cid, date) VALUES (:cid, :date)`),
 		sql_UniqueDailyCidCount: prepareNamed(`
 				SELECT COUNT(DISTINCT cid) FROM cids WHERE date=:date`),
 		sql_UniqueMonthlyCidCount: prepareNamed(`
@@ -89,19 +94,20 @@ func (s *dbStorageService) Close() error {
 }
 
 func (s *dbStorageService) SetCid(cid uuid.UUID, date time.Time) error {
+	dateStr := date.Format("20060102")
 	_, err := s.sql_SaveCid.Exec(&cidsEntry{
 		Cid:  cid.String(),
-		Date: date.Format("20200909"),
+		Date: dateStr,
 	})
 	if err != nil {
-		return fmt.Errorf("Failed to save a client ID %q: %v", cid.String(), err)
+		return fmt.Errorf("Failed to save a client ID %q %q: %v", cid.String(), dateStr, err)
 	}
 	return nil
 }
 
 func (s *dbStorageService) GetUniqueDailyCidCount(date time.Time) (int, error) {
 	var count int
-	d := date.Format("20200909")
+	d := date.Format("20060102")
 	err := s.sql_UniqueDailyCidCount.Get(&count, cidsEntry{Date: d})
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -114,8 +120,8 @@ func (s *dbStorageService) GetUniqueDailyCidCount(date time.Time) (int, error) {
 
 func (s *dbStorageService) GetUniqueMonthlyCidCount(date time.Time) (int, error) {
 	var count int
-	startDate := date.AddDate(0, -1, 0).Format("20200909")
-	endDate := date.Format("20200909")
+	startDate := date.AddDate(0, -1, 0).Format("20060102")
+	endDate := date.Format("20060102")
 	err := s.sql_UniqueMonthlyCidCount.Get(&count, dateRangeEntry{
 		StartDate: startDate,
 		EndDate:   endDate,

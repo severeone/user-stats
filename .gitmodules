@@ -34,3 +34,6 @@
 [submodule "src/github.com/go-yaml/yaml"]
 	path = src/github.com/go-yaml/yaml
 	url = https://github.com/go-yaml/yaml
+[submodule "src/github.com/go-sql-driver/mysql"]
+	path = src/github.com/go-sql-driver/mysql
+	url = https://github.com/go-sql-driver/mysql

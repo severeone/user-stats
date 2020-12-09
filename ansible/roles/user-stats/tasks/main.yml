@@ -1,0 +1,32 @@
+---
+- name: Create config path
+  file:
+    path: "{{ user_stats_config_dst }}"
+    state: directory
+
+- name: Put the config.yml file in place
+  copy:
+    src: "{{ user_stats_config_src }}"
+    dest: "{{ user_stats_config_dst }}/config.yml"
+
+- name: Build docker image
+  docker_image:
+    build:
+      path: "{{ user_stats_path }}"
+      pull: yes
+    source: build
+    force_source: yes
+    name: "{{ user_stats_docker_image_local }}"
+
+- name: Install a deployment script
+  copy:
+    src: "{{ user_stats_deployment_script }}"
+    dest: ./deploy-user-stats.sh
+
+- name: Make user-stats deployment script executable
+  file:
+    path: ./deploy-user-stats.sh
+    mode: a+x
+
+- name: Deploy user-stats
+  shell: "./deploy-user-stats.sh"

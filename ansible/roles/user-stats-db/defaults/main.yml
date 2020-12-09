@@ -1,0 +1,9 @@
+---
+user_stats_db_script_path: "../../sql"
+user_stats_db_base_script: "init_db.sql"
+
+user_stats_db_host:          127.0.0.1
+user_stats_db_port:          3306
+user_stats_db_root_user:     root
+user_stats_db_root_password: userstats
+user_stats_db_name:          clients

@@ -1,0 +1,39 @@
+---
+- name: Install MySQL container
+  tags: 
+    - mysql-container
+  block:
+    - name: Ensure mysql dirs exist
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0777'
+        recurse: yes
+      loop:
+        - "{{ mysql_data_dir }}"
+        - "{{ mysql_conf_dir }}"
+
+    - name: Copy mysql config file
+      copy:
+        src: ../files/my.cnf
+        dest: "{{ mysql_conf_dir }}"
+        force: yes
+        mode: 0755
+
+    - name: Run mysql server in a docker container
+      docker_container:
+        env: "{{ mysql_env }}"
+        image: "{{ mysql_image }}"
+        name: "{{ mysql_container_name }}"
+        ports: "{{ mysql_ports }}"
+        pull: true
+        recreate: true
+        restart_policy: always
+        state: started
+        log_driver: "{{ mysql_log_driver }}"
+        log_options: "{{ mysql_log_opt }}"
+        capabilities:
+          - sys_nice
+        volumes:
+          - "{{ mysql_conf_dir }}:/etc/mysql/conf.d"
+          - "{{ mysql_data_dir }}:/var/lib/mysql"

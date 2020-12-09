@@ -1,0 +1,24 @@
+---
+- name: Install MySQL container and client
+  hosts: localhost
+  connection: local
+  tags:
+    - mysql
+  roles:
+    - mysql-docker
+
+- name: Initialize user-stats DB
+  hosts: localhost
+  connection: local
+  tags:
+    - db
+  roles:
+    - user-stats-db
+
+- name: Install User-Stats application
+  hosts: localhost
+  connection: local
+  tags:
+    - app
+  roles:
+    - user-stats

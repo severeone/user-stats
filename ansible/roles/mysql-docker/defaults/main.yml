@@ -1,0 +1,28 @@
+---
+mysql_image: mysql:latest
+
+mysql_data_dir: ~/mysql/data
+mysql_conf_dir: ~/mysql/conf.d
+
+mysql_character_set: utf8mb4
+mysql_collation: utf8mb4_unicode_520_ci
+
+mysql_config_mysqld:
+  max_connections: 500
+  skip_name_resolve: "true"
+
+mysql_root_password: userstats
+
+mysql_container_name: mysql
+mysql_env: 
+  MYSQL_ROOT_PASSWORD: "{{ mysql_root_password }}"
+
+mysql_port: "3306"
+
+mysql_ports:
+  - "{{ mysql_port }}:3306"
+  - "{{ mysql_port }}0:33060"
+
+mysql_log_driver: json-file
+mysql_log_opt:
+  tag: "{{ mysql_container_name }}"
